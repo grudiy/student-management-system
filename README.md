@@ -1,0 +1,1 @@
+### Student management system with DB and GUI on PyQt6
