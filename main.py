@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QMainWindow, \
-    QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox
+    QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QToolBar
 import sys
 import sqlite3
 
@@ -10,8 +10,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Students Management")
-        self.setFixedWidth(640)
-        self.setFixedHeight(400)
+        self.setFixedWidth(800)
+        self.setFixedHeight(600)
 
         # Main menu
         file_menu_item = self.menuBar().addMenu("&File")
@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         edit_menu_item = self.menuBar().addMenu("&Edit")
 
         # Submenus
-        add_student_action = QAction("Add Student", self)
+        add_student_action = QAction(QIcon("icons/add.png"), "Add Student", self)
         file_menu_item.addAction(add_student_action)
         add_student_action.triggered.connect(self.insert)
 
@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
         help_menu_item.addAction(about_action)
         about_action.setMenuRole(QAction.MenuRole.NoRole)
 
-        search_action = QAction("Search", self)
+        search_action = QAction(QIcon("icons/search.png"), "Search", self)
         edit_menu_item.addAction(search_action)
         search_action.triggered.connect(self.search)
 
@@ -36,6 +36,15 @@ class MainWindow(QMainWindow):
         self.table.setHorizontalHeaderLabels(("ID", "Name", "Course", "Mobile"))
         self.table.verticalHeader().setVisible(False)  # Hide column with default IDs
         self.setCentralWidget(self.table)
+
+        # Toolbar
+        toolbar = QToolBar()
+        toolbar.setMovable(True)
+        self.addToolBar(toolbar)
+
+        # Add toolbar elements
+        toolbar.addAction(add_student_action)
+        toolbar.addAction(search_action)
 
     def load_data(self):
         connection = sqlite3.connect("database.db")
