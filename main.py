@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QMainWindow, \
-    QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QToolBar
+    QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QToolBar, QStatusBar
 import sys
 import sqlite3
 
@@ -46,6 +46,30 @@ class MainWindow(QMainWindow):
         toolbar.addAction(add_student_action)
         toolbar.addAction(search_action)
 
+        # Status bar
+        self.statusbar = QStatusBar()
+        self.setStatusBar(self.statusbar)
+
+        # Detect a cell click
+        self.table.clicked.connect(self.cell_clicked)
+
+    def cell_clicked(self):
+        edit_button = QPushButton("Edit Record")
+        edit_button.clicked.connect(self.edit)
+
+        delete_button = QPushButton("Delete Record")
+        delete_button.clicked.connect(self.delete)
+
+        # Clean if there were buttons yet
+        children = self.findChildren(QPushButton)
+        if children:
+            for item in children:
+                self.statusbar.removeWidget(item)
+
+        self.statusbar.addWidget(edit_button)
+        self.statusbar.addWidget(delete_button)
+
+
     def load_data(self):
         connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
@@ -66,6 +90,13 @@ class MainWindow(QMainWindow):
         dialog = SearchDialog()
         dialog.exec()
 
+    def edit(self):
+        dialog = EditDialog()
+        dialog.exec()
+
+    def delete(self):
+        dialog = DeleteDialog()
+        dialog.exec()
 
 class InsertDialog(QDialog):
     def __init__(self):
@@ -116,6 +147,11 @@ class InsertDialog(QDialog):
         window.load_data()
 
 
+class EditDialog(QDialog):
+    pass
+
+class DeleteDialog(QDialog):
+    pass
 class SearchDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -152,6 +188,9 @@ class SearchDialog(QDialog):
 
         cursor.close()
         connection.close()
+
+
+
 
 
 
