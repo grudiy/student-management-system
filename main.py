@@ -3,15 +3,19 @@ from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QMainWindow, \
     QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QToolBar, QStatusBar, QMessageBox
 import sys
-import sqlite3
+import mysql.connector
 
 
 class DataBaseConnection():
-    def __init__(self, db_path="database.db"):
-        self.db_path = db_path
+    def __init__(self, host="localhost", user="root", password="***", database="school"):
+        self.host = host
+        self.user = user
+        self.password = password
+        self.database = database
 
     def connect(self):
-        connection = sqlite3.connect(self.db_path)
+        connection = mysql.connector.connect(host=self.host, user=self.user,
+                                             password=self.password, database=self.database)
         return connection
 
 
@@ -83,7 +87,9 @@ class MainWindow(QMainWindow):
     def load_data(self):
         connection = DataBaseConnection().connect()
         cursor = connection.cursor()
-        result = cursor.execute("SELECT * FROM students")
+        cursor.execute("SELECT * FROM students")
+        result = cursor.fetchall()
+
         self.table.setRowCount(0)  # Reset the table and load it again fresh
         for row_number, row_data in enumerate(result):
             self.table.insertRow(row_number)
@@ -169,7 +175,7 @@ class InsertDialog(QDialog):
 
         connection = DataBaseConnection().connect()
         cursor = connection.cursor()
-        cursor.execute("INSERT INTO students (name, course, mobile) VALUES (?, ?, ?)",
+        cursor.execute("INSERT INTO students (name, course, mobile) VALUES (%s, %s, %s)",
                        (name, course, mobile))
         connection.commit()
         cursor.close()
@@ -225,7 +231,7 @@ class EditDialog(QDialog):
     def update_student(self):
         connection = DataBaseConnection().connect()
         cursor = connection.cursor()
-        cursor.execute("UPDATE students SET name = ?, course = ? , mobile = ? WHERE id = ?",
+        cursor.execute("UPDATE students SET name = %s, course = %s , mobile = %s WHERE id = %s",
                        (self.student_name.text(),
                         self.course_name.itemText(self.course_name.currentIndex()),
                         self.mobile.text(),
@@ -262,7 +268,7 @@ class DeleteDialog(QDialog):
 
         connection = DataBaseConnection().connect()
         cursor = connection.cursor()
-        cursor.execute("DELETE FROM students WHERE id = ?", (student_id,))
+        cursor.execute("DELETE FROM students WHERE id = %s", (student_id,))
         connection.commit()
         cursor.close()
         connection.close()
@@ -301,7 +307,8 @@ class SearchDialog(QDialog):
         name = self.search_name.text()
         connection = DataBaseConnection().connect()
         cursor = connection.cursor()
-        result = cursor.execute("SELECT * FROM students WHERE name = ?", (name,))
+        cursor.execute("SELECT * FROM students WHERE name = %s", (name,))
+        result = cursor.fetchall()
         rows = list(result)
 
         # Find items in the table
