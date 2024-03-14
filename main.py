@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QMainWindow, \
-    QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QToolBar, QStatusBar
+    QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QToolBar, QStatusBar, QMessageBox
 import sys
 import sqlite3
 
@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
         about_action = QAction("About", self)
         help_menu_item.addAction(about_action)
         about_action.setMenuRole(QAction.MenuRole.NoRole)
+        about_action.triggered.connect(self.show_about)
 
         search_action = QAction(QIcon("icons/search.png"), "Search", self)
         edit_menu_item.addAction(search_action)
@@ -69,7 +70,6 @@ class MainWindow(QMainWindow):
         self.statusbar.addWidget(edit_button)
         self.statusbar.addWidget(delete_button)
 
-
     def load_data(self):
         connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
@@ -86,7 +86,6 @@ class MainWindow(QMainWindow):
         dialog = InsertDialog()
         dialog.exec()
 
-
     def edit(self):
         dialog = EditDialog()
         dialog.exec()
@@ -98,6 +97,27 @@ class MainWindow(QMainWindow):
     def search(self):
         dialog = SearchDialog()
         dialog.exec()
+
+    def show_about(self):
+        dialog = AboutDialog()
+        dialog.exec()
+
+
+class AboutDialog(QMessageBox):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("About")
+        content = """
+        Where does it come from?
+        
+        Contrary to popular belief, Lorem Ipsum is not simply random text. 
+        It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. 
+        Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure 
+        Latin words, consectetur, from a Lorem Ipsum passage.
+        
+        Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" 
+        """
+        self.setText(content)
 
 
 class InsertDialog(QDialog):
@@ -157,9 +177,9 @@ class EditDialog(QDialog):
         self.setFixedHeight(300)
 
         layout = QVBoxLayout()
-        index = main_window.table.currentRow()
 
         # Get ID of selected student
+        index = main_window.table.currentRow()
         self.student_id = main_window.table.item(index, 0).text()
 
         # Get student's name from selected row
@@ -195,10 +215,10 @@ class EditDialog(QDialog):
         connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
         cursor.execute("UPDATE students SET name = ?, course = ? , mobile = ? WHERE id = ?",
-            (self.student_name.text(),
-             self.course_name.itemText(self.course_name.currentIndex()),
-             self.mobile.text(),
-             self.student_id))
+                       (self.student_name.text(),
+                        self.course_name.itemText(self.course_name.currentIndex()),
+                        self.mobile.text(),
+                        self.student_id))
         connection.commit()
         cursor.close()
         connection.close()
@@ -206,8 +226,46 @@ class EditDialog(QDialog):
         # Refresh data in table from DB
         main_window.load_data()
 
+
 class DeleteDialog(QDialog):
-    pass
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Delete Student")
+
+        layout = QGridLayout()
+        confirmation_message = QLabel("Are you sure you want to delete the student?")
+        yes = QPushButton("Yes")
+        no = QPushButton("No")
+
+        layout.addWidget(confirmation_message, 0, 0, 1, 2)
+        layout.addWidget(yes, 1, 0)
+        layout.addWidget(no, 1, 1)
+
+        self.setLayout(layout)
+
+        yes.clicked.connect(self.delete_student)
+
+    def delete_student(self):
+        index = main_window.table.currentRow()
+        student_id = main_window.table.item(index, 0).text()
+
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM students WHERE id = ?", (student_id,))
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        # Refresh data in table from DB
+        main_window.load_data()
+
+        self.close()  # Close current dialog window
+
+        confirmation_widget = QMessageBox()
+        confirmation_widget.setWindowTitle("Success")
+        confirmation_widget.setText("The record was deleted successfully")
+
+
 class SearchDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -244,10 +302,6 @@ class SearchDialog(QDialog):
 
         cursor.close()
         connection.close()
-
-
-
-
 
 
 app = QApplication(sys.argv)
